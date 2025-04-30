@@ -89,21 +89,23 @@ class CompanyStatsFromLocal(CompanyStatsSource):
         self._df["inn"] = self._df["inn"].astype(str).str.strip()  # унификация
 
     @lru_cache(maxsize=1024)
-    def _row(self, inn: str) -> pd.Series:
+    def get_row(self, inn: str) -> pd.Series:
         """
         Возвращает строку из DataFrame по ИНН. Кэширует результат.
         """
         normalized_inn = inn.strip()
         matches = self._df[self._df["inn"] == normalized_inn]
+
         if matches.empty:
             raise CompanyNotFoundError(f"Компания с ИНН {inn} не найдена")
+
         return matches.iloc[0]
 
     def get_category_stats(self, inn: str, category: str) -> Dict[str, Any]:
         if category not in CompanyStatsSource.CATEGORY_FIELDS:
             raise KeyError(f"Unknown category: {category}")
 
-        row = self._row(inn)
+        row = self.get_row(inn)
         fields = CompanyStatsSource.CATEGORY_FIELDS[category]
         subset = row.reindex(fields)
 

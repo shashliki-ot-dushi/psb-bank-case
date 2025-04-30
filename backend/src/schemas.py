@@ -18,4 +18,5 @@ class Verdict(str, Enum):
 
 class AnalyzeResponse(BaseModel):
     verdict: Verdict
+    score: float
     key_influencers: Dict[str, float]
