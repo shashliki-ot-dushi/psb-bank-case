@@ -121,6 +121,7 @@ async def chat_llm(
             detail=f"Не удалось получить ответ от LLM: {err}"
         )
 
+
     return ChatResponse(answer=answer)
 
 
@@ -130,6 +131,20 @@ async def financial(
     inn: str = Query(..., description="ИНН компании")
 ):
     return expect_not_found(stats_source.get_financial_stats, inn)
+
+# Эндпоинты статистики по категориям
+@stats.get("/financial", summary="Финансовые метрики")
+async def financial(
+    inn: str = Query(..., description="ИНН компании")
+):
+    return expect_not_found(stats_source.get_financial_stats, inn)
+  
+
+@stats.get("/general", summary="Общие метрики")
+async def general(
+    inn: str = Query(..., description="ИНН компании")
+):
+    return expect_not_found(stats_source.get_general_stats, inn)
 
 
 @stats.get("/general", summary="Общие метрики")
@@ -146,11 +161,32 @@ async def contracts(
     return expect_not_found(stats_source.get_contracts_stats, inn)
 
 
+@stats.get("/contracts", summary="Контрактные метрики")
+async def contracts(
+    inn: str = Query(..., description="ИНН компании")
+):
+    return expect_not_found(stats_source.get_contracts_stats, inn)
+
+
 @stats.get("/arbitration", summary="Арбитражные метрики")
 async def arbitration(
     inn: str = Query(..., description="ИНН компании")
 ):
     return expect_not_found(stats_source.get_arbitration_stats, inn)
+
+
+@stats.get("/arbitration", summary="Арбитражные метрики")
+async def arbitration(
+    inn: str = Query(..., description="ИНН компании")
+):
+    return expect_not_found(stats_source.get_arbitration_stats, inn)
+
+
+@stats.get("/enforcement", summary="Исполнительные метрики")
+async def enforcement(
+    inn: str = Query(..., description="ИНН компании")
+):
+    return expect_not_found(stats_source.get_enforcement_stats, inn)
 
 
 @stats.get("/enforcement", summary="Исполнительные метрики")
