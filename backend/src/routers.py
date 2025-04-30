@@ -1,3 +1,4 @@
+from os import environ
 from typing import Dict, Any
 import requests
 import numpy as np
@@ -21,9 +22,15 @@ app = FastAPI(
 )
 
 # Конфигурация YandexGPT
-API_KEY = ""  # Вставьте ключ здесь
-FOLDER_ID = "b1gst3c7cskk2big5fqn"
 BASE_URL = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
+
+API_KEY = environ.get("YANDEX_CLOUD_API_KEY")
+if not API_KEY:
+    raise KeyError("Environment variable YANDEX_CLOUD_API_KEY not specified")
+
+FOLDER_ID = environ.get("YANDEX_CLOUD_FOLDER_ID")
+if not FOLDER_ID:
+    raise KeyError("Environment variable YANDEX_CLOUD_FOLDER_ID not specified")
 
 # Инициализация источника данных и модели
 stats_source = CompanyStatsFromLocal("../data/full_transformed_wo_target.csv")

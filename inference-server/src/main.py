@@ -1,3 +1,4 @@
+from os import environ
 from functools import lru_cache
 from typing import Dict, List
 
@@ -10,7 +11,9 @@ from transformers import (
 
 from schemas import InferenceRequest, InferenceResponse, OutputItem
 
-HF_TOKEN = "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"
+HF_TOKEN = environ.get("HF_TOKEN")
+if not HF_TOKEN:
+    raise KeyError("Environment variable HF_TOKEN not specified")
 
 MODEL_REGISTRY: Dict[str, str] = {
     "arbitr":       "utyfull/contract-arbitr_extra",

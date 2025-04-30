@@ -3,16 +3,17 @@ services:
     build: ./backend
     environment:
       - REDIS_URL=redis://redis:6379/0
+      - YANDEX_CLOUD_API_KEY
+      - YANDEX_CLOUD_FOLDER_ID
     depends_on:
       - redis
     ports:
       - "8000:8000"
 
-
   frontend:
     build: ./frontend
-    # environment:
-    # -BACKEND_URL=backend:8000
+    environment:
+      - HF_TOKEN
     depends_on:
       - redis
     ports:
