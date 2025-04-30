@@ -1,3 +1,4 @@
+from os import environ
 from typing import Dict, Any
 import requests
 import numpy as np
@@ -21,9 +22,15 @@ app = FastAPI(
 )
 
 # Конфигурация YandexGPT
-API_KEY = "AQVNzzJielnSayrAOlQWlxDMK49OShvzdqtUQdAp"
-FOLDER_ID = "b1gst3c7cskk2big5fqn"
 BASE_URL = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
+
+API_KEY = environ.get("YANDEX_CLOUD_API_KEY")
+if not API_KEY:
+    raise KeyError("Environment variable YANDEX_CLOUD_API_KEY not specified")
+
+FOLDER_ID = environ.get("YANDEX_CLOUD_FOLDER_ID")
+if not FOLDER_ID:
+    raise KeyError("Environment variable YANDEX_CLOUD_FOLDER_ID not specified")
 
 # Инициализация источника данных и модели
 stats_source = CompanyStatsFromLocal("../data/full_transformed_wo_target.csv")
@@ -114,6 +121,7 @@ async def chat_llm(
             detail=f"Не удалось получить ответ от LLM: {err}"
         )
 
+
     return ChatResponse(answer=answer)
 
 
@@ -123,6 +131,20 @@ async def financial(
     inn: str = Query(..., description="ИНН компании")
 ):
     return expect_not_found(stats_source.get_financial_stats, inn)
+
+# Эндпоинты статистики по категориям
+@stats.get("/financial", summary="Финансовые метрики")
+async def financial(
+    inn: str = Query(..., description="ИНН компании")
+):
+    return expect_not_found(stats_source.get_financial_stats, inn)
+  
+
+@stats.get("/general", summary="Общие метрики")
+async def general(
+    inn: str = Query(..., description="ИНН компании")
+):
+    return expect_not_found(stats_source.get_general_stats, inn)
 
 
 @stats.get("/general", summary="Общие метрики")
@@ -139,11 +161,32 @@ async def contracts(
     return expect_not_found(stats_source.get_contracts_stats, inn)
 
 
+@stats.get("/contracts", summary="Контрактные метрики")
+async def contracts(
+    inn: str = Query(..., description="ИНН компании")
+):
+    return expect_not_found(stats_source.get_contracts_stats, inn)
+
+
 @stats.get("/arbitration", summary="Арбитражные метрики")
 async def arbitration(
     inn: str = Query(..., description="ИНН компании")
 ):
     return expect_not_found(stats_source.get_arbitration_stats, inn)
+
+
+@stats.get("/arbitration", summary="Арбитражные метрики")
+async def arbitration(
+    inn: str = Query(..., description="ИНН компании")
+):
+    return expect_not_found(stats_source.get_arbitration_stats, inn)
+
+
+@stats.get("/enforcement", summary="Исполнительные метрики")
+async def enforcement(
+    inn: str = Query(..., description="ИНН компании")
+):
+    return expect_not_found(stats_source.get_enforcement_stats, inn)
 
 
 @stats.get("/enforcement", summary="Исполнительные метрики")
