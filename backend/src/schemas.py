@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Dict, Any
+from typing import Dict, Any, List
 from enum import Enum
 
 
@@ -19,4 +19,4 @@ class Verdict(str, Enum):
 class AnalyzeResponse(BaseModel):
     verdict: Verdict
     score: float
-    key_influencers: Dict[str, float]
+    key_influencers: List[Dict[str, float]]

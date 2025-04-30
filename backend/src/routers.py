@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Query, HTTPException
 from catboost import CatBoostClassifier
+import shap
 
 from schemas import AnalyzeResponse, Verdict
 from company import CompanyStatsFromLocal, CompanyNotFoundError
@@ -13,6 +14,8 @@ stats_source = CompanyStatsFromLocal("../data/company_info.csv")
 
 credit_model = CatBoostClassifier()
 credit_model.load_model("../models/baseline.cbm")
+
+explainer = shap.TreeExplainer(credit_model)
 
 root = APIRouter(
     prefix="/v1",
@@ -33,44 +36,49 @@ def expect_not_found(func, inn: str, cat: str):
 
 
 @root.get("/analyze", response_model=AnalyzeResponse)
-async def analyze_company(inn: str = Query(..., description="ИНН компании")) -> AnalyzeResponse:
+async def analyze_company(inn: str = Query(..., description="ИНН компании")):
     try:
         row = stats_source.get_row(inn)
     except CompanyNotFoundError:
-        raise HTTPException(404, f"Компания с ИНН {inn} не найдена")
-
-    X = row.to_frame().T
-
+        raise HTTPException(status_code=404, detail=f"Компания с ИНН {inn} не найдена")
+    
+    # Формируем единственный экземпляр фич
+    X = row.to_frame().T.reset_index(drop=True)
+    
+    # 1. Предскажем вероятность default
     p_quasi_default = credit_model.predict_proba(X)[0][1]
-
     verdict = Verdict.decline if p_quasi_default >= 0.3 else Verdict.approve
 
+    # 2. Вычисляем SHAP-значения
+    shap_vals = explainer.shap_values(X)
+    # Для бинарного классификатора shap_vals — список [для класса 0, для класса 1]
+    shap_full = shap_vals[1] if isinstance(shap_vals, list) else shap_vals
 
-    feature_names = X.columns.tolist()
-    importances = credit_model.get_feature_importance(type='FeatureImportance')
+    # 3. Убираем столбец 'id' (если он есть)
+    if 'id' in X.columns:
+        id_col_index = X.columns.get_loc('id')
+        features = X.drop(columns=['id'])
+        shap_feats = np.delete(shap_full, id_col_index, axis=1)
+    else:
+        features = X
+        shap_feats = shap_full
 
-    feat_imp_df = pd.DataFrame({
-    'feature': feature_names,
-    'importance': importances
-})
-    
-    total_imp = feat_imp_df['importance'].sum()
-    feat_imp_df['importance_rel'] = feat_imp_df['importance'] / total_imp
+    # 4. Берём единственную строку shap-значений
+    shap_single = shap_feats[0]
 
-    feat_imp_df = feat_imp_df.sort_values(
-        by='importance_rel',
-        ascending=False
-    ).reset_index(drop=True)
-
-    feat_imp_df = feat_imp_df[['feature', 'importance_rel']]
-    key_influencers = dict(zip(feat_imp_df['feature'], feat_imp_df['importance_rel']))
+    # 5. Собираем словарь {feature_name: shap_value}
+    key_influencers = [
+        {
+        feat: float(val)
+        for feat, val in zip(features.columns, shap_single)
+        },
+    ]
 
     return AnalyzeResponse(
         verdict=verdict,
-        score=p_quasi_default,
+        score=float(p_quasi_default),
         key_influencers=key_influencers
     )
-
 
 @stats.get("/financial")
 async def financial(inn: str = Query(...)): 
