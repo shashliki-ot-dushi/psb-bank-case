@@ -10,10 +10,10 @@ from schemas import AnalyzeResponse, Verdict
 from company import CompanyStatsFromLocal, CompanyNotFoundError
 
 
-stats_source = CompanyStatsFromLocal("../data/company_info.csv")
+stats_source = CompanyStatsFromLocal("../data/full_transformed_wo_target.csv")
 
 credit_model = CatBoostClassifier()
-credit_model.load_model("../models/baseline.cbm")
+credit_model.load_model("../models/catboost_model-2.cbm")
 
 explainer = shap.TreeExplainer(credit_model)
 
