@@ -38,14 +38,14 @@ export function IndustryComparisonChart({
               <Radar name="Your Company" dataKey="company" stroke="#2563eb" fill="#3b82f680" fillOpacity={0.6} />
               <Radar name="Industry Average" dataKey="industry" stroke="#e11d48" fill="#e11d4880" fillOpacity={0.6} />
               <Legend />
-              <Tooltip
+              {/* <Tooltip
                 contentStyle={{
                   borderRadius: "6px",
                   border: "1px solid hsl(var(--border))",
                   boxShadow: "var(--shadow)",
                   backgroundColor: "hsl(var(--background))",
                 }}
-              />
+              /> */}
             </RadarChart>
           </ResponsiveContainer>
         </div>

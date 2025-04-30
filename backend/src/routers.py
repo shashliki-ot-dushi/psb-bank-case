@@ -21,7 +21,7 @@ app = FastAPI(
 )
 
 # Конфигурация YandexGPT
-API_KEY = "AQVNzzJielnSayrAOlQWlxDMK49OShvzdqtUQdAp"
+API_KEY = ""  # Вставьте ключ здесь
 FOLDER_ID = "b1gst3c7cskk2big5fqn"
 BASE_URL = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
 

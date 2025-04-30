@@ -127,7 +127,7 @@ export function WaterfallChart({
                 stackId="stack"
                 radius={[4, 4, 0, 0]}
                 // Custom fill based on value
-                fill={(entry) => entry.color}
+                // fill={(entry) => entry.color}
               />
             </BarChart>
           </ResponsiveContainer>
