@@ -1,69 +1,68 @@
-from fastapi import APIRouter, Query
-from schemas import AnalyzeResponse, FeatureStatsResponse, Verdict, Feautre
+from fastapi import APIRouter, Query, HTTPException
+from typing import Dict, Any
 
+from schemas import AnalyzeResponse, Verdict
+from company import CompanyStatsFromLocal, CompanyNotFoundError
+
+
+stats_source = CompanyStatsFromLocal("../data/company_info.csv")
 
 root = APIRouter(
-    prefix="/api",
+    prefix="/v1",
     tags=["Financial Analysis"]
 )
 
 stats = APIRouter(
-    prefix="/api/stats",
-    tags=["Curated corporation information"]
+    prefix="/v1/stats", 
+    tags=["Company statistics"]
 )
 
 
+def expect_not_found(func, inn: str, cat: str):
+    try:
+        return func(inn)
+    except CompanyNotFoundError:
+        raise HTTPException(404, f"Компания с ИНН {inn} не найдена")
+
+
 @root.get("/analyze", response_model=AnalyzeResponse)
-async def analyze_company(inn: str = Query(..., description="ИНН компании для анализа")):
-    """
-    Анализирует финансовую состоятельность компании по ИНН и
-    возвращает вердикт о возможности выдачи кредита, а также
-    вклад различных факторов в итоговый результат.
-    """
-    # TODO: Реализовать логику анализа
-    return ...
+async def analyze_company(inn: str = Query(..., description="ИНН компании")):
+    return AnalyzeResponse(verdict=Verdict.approve, key_influencers={})
 
 
-@stats.get(f"/legal", response_model=FeatureStatsResponse)
-async def get_arbitration_cases_stats(inn: str = Query(..., description="ИНН компании для анализа арбитражных дел")):
-    """
-    Возвращает статистику по количеству арбитражных дел компании.
-    """
-    # TODO: Реализовать логику получения статистики по арбитражным делам
-    return ...
+@stats.get("/financial")
+async def financial(inn: str = Query(...)): 
+    return expect_not_found(stats_source.get_financial_stats, inn, "financial")
 
 
-@stats.get("/stocks", response_model=FeatureStatsResponse)
-async def get_stock_price_trend_stats(inn: str = Query(..., description="ИНН компании для анализа динамики акций")):
-    """
-    Возвращает статистику по динамике цен на акции компании.
-    """
-    # TODO: Реализовать логику получения статистики по динамике акций
-    return ...
+@stats.get("/general")
+async def general(inn: str = Query(...)):
+    return expect_not_found(stats_source.get_general_stats, inn, "general")
 
 
-@stats.get("/revenue", response_model=FeatureStatsResponse)
-async def get_revenue_growth_stats(inn: str = Query(..., description="ИНН компании для анализа роста выручки")):
-    """
-    Возвращает статистику по росту выручки компании.
-    """
-    # TODO: Реализовать логику получения статистики по росту выручки
-    return ...
+@stats.get("/contracts")
+async def contracts(inn: str = Query(...)):
+    return expect_not_found(stats_source.get_contracts_stats, inn, "contracts")
 
 
-@stats.get("/debt", response_model=FeatureStatsResponse)
-async def get_debt_ratio_stats(inn: str = Query(..., description="ИНН компании для анализа долговой нагрузки")):
-    """
-    Возвращает статистику по уровню долговой нагрузки компании.
-    """
-    # TODO: Реализовать логику получения статистики по долговой нагрузке
-    return ...
+@stats.get("/arbitration")
+async def arbitration(inn: str = Query(...)):
+    return expect_not_found(stats_source.get_arbitration_stats, inn, "arbitration")
 
 
-@stats.get("/profitability", response_model=FeatureStatsResponse)
-async def get_profitability_stats(inn: str = Query(..., description="ИНН компании для анализа прибыльности")):
-    """
-    Возвращает статистику по прибыльности компании.
-    """
-    # TODO: Реализовать логику получения статистики по прибыльности
-    return ...
+@stats.get("/enforcement")
+async def enforcement(inn: str = Query(...)):
+    return expect_not_found(stats_source.get_enforcement_stats, inn, "enforcement")
+
+
+@stats.get("/risk")
+async def risk(inn: str = Query(...)):
+    return expect_not_found(stats_source.get_risk_stats, inn, "risk")
+
+
+@stats.get("/all")
+async def all_stats(inn: str = Query(...)):
+    try:
+        return stats_source.get_all_stats(inn)
+    except CompanyNotFoundError:
+        raise HTTPException(404, f"Компания с ИНН {inn} не найдена")

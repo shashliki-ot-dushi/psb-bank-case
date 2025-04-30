@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Dict
+from pydantic import BaseModel, Field
+from typing import Dict, Any
 from enum import Enum
 
 
@@ -18,4 +18,4 @@ class Verdict(str, Enum):
 
 class AnalyzeResponse(BaseModel):
     verdict: Verdict
-    key_influencers: Dict[str, float]  # Название фичи -> вклад в результат в процентах
+    key_influencers: Dict[str, float]
