@@ -6,9 +6,19 @@ services:
     depends_on:
       - redis
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
+
+
+  frontend:
+    build: ./frontend
+    # environment:
+    # -BACKEND_URL=backend:8000
+    depends_on:
+      - redis
+    ports:
+      - "8000:8000"
 
   redis:
     image: redis:7-alpine
     ports:
-      - "127.0.0.1:6379:6379"
+      - "6379:6379"
