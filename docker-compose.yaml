@@ -6,20 +6,35 @@ services:
       - YANDEX_CLOUD_API_KEY
       - YANDEX_CLOUD_FOLDER_ID
     depends_on:
-      - redis
+      - postgres
     ports:
       - "8000:8000"
+    restart: always
 
   frontend:
     build: ./frontend
     environment:
       - HF_TOKEN
     depends_on:
-      - redis
+      - postgres
     ports:
       - "3000:3000"
+    restart: always
 
-  redis:
-    image: redis:7-alpine
+  postgres:
+    image: postgres
+    container_name: postgres
+    restart: always
     ports:
-      - "6379:6379"
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: shashlik
+      POSTGRES_PASSWORD: shashlik
+      POSTGRES_DB: psb-bank-case
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "db_prod" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+
