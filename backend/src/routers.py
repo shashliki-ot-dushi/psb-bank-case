@@ -1,6 +1,7 @@
 from typing import Dict, Any
 
 import numpy as np
+import pandas as pd
 from fastapi import APIRouter, Query, HTTPException
 from catboost import CatBoostClassifier
 
@@ -44,10 +45,30 @@ async def analyze_company(inn: str = Query(..., description="ИНН компан
 
     verdict = Verdict.decline if p_quasi_default >= 0.3 else Verdict.approve
 
+
+    feature_names = X.columns.tolist()
+    importances = credit_model.get_feature_importance(type='FeatureImportance')
+
+    feat_imp_df = pd.DataFrame({
+    'feature': feature_names,
+    'importance': importances
+})
+    
+    total_imp = feat_imp_df['importance'].sum()
+    feat_imp_df['importance_rel'] = feat_imp_df['importance'] / total_imp
+
+    feat_imp_df = feat_imp_df.sort_values(
+        by='importance_rel',
+        ascending=False
+    ).reset_index(drop=True)
+
+    feat_imp_df = feat_imp_df[['feature', 'importance_rel']]
+    key_influencers = dict(zip(feat_imp_df['feature'], feat_imp_df['importance_rel']))
+
     return AnalyzeResponse(
         verdict=verdict,
         score=p_quasi_default,
-        key_influencers={}
+        key_influencers=key_influencers
     )
 
 
