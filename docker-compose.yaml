@@ -11,14 +11,24 @@ services:
       - "8000:8000"
     restart: always
 
-  frontend:
-    build: ./frontend
+  # frontend:
+  #   build: ./frontend
+  #   environment:
+  #     - HF_TOKEN
+  #   depends_on:
+  #     - postgres
+  #   ports:
+  #     - "3000:3000"
+  #   restart: always
+
+  news-llm:
+    build:
+      context: ./news-llm
     environment:
-      - HF_TOKEN
-    depends_on:
-      - postgres
+      - YANDEX_CLOUD_API_KEY
+      - YANDEX_CLOUD_FOLDER_ID
     ports:
-      - "3000:3000"
+      - "9000:8000"
     restart: always
 
   postgres:
