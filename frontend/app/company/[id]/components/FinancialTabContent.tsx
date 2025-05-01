@@ -30,28 +30,27 @@ export default function FinancialTabContent({
   data?: FinancialData
 }) {
   const {
-    // Первый график: Выручка и Активы
+    // Доходы и активы
     fin_rev_last = 0,
     fin_assets_last = 0,
 
-    // Второй график: Рентабельность
+    // Рентабельность
     fin_profit_margin = 0,
     fin_gross_margin = 0,
     fin_ebitda_margin = 0,
 
-    // Третий график: Финансовая устойчивость
-    fin_debt_ebitda = 0,
+    // Устойчивость (будем явно указывать non-null ниже)
+    fin_debt_ebitda,
     fin_current_ratio = 0,
 
-    // Четвёртый график: Денежный поток
+    // Денежный поток
     fin_cashflow_oper = 0,
-    fin_cf_op_to_debt = 0,
-  } = {
-    // заменяем null на 0 для корректного рендеринга
-    ...data,
-    fin_debt_ebitda: data.fin_debt_ebitda ?? 0,
-    fin_cf_op_to_debt: data.fin_cf_op_to_debt ?? 0,
-  }
+    fin_cf_op_to_debt,
+  } = data
+
+  // Явно утверждаем, что эти поля не null (non-null assertion)
+  const debtToEbitda = fin_debt_ebitda!
+  const cfDebtPercent = fin_cf_op_to_debt! * 100
 
   return (
     <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -111,7 +110,7 @@ export default function FinancialTabContent({
           <ResponsiveContainer>
             <BarChart
               data={[
-                { name: "Долговая нагрузка", value: fin_debt_ebitda },
+                { name: "Долговая нагрузка", value: debtToEbitda },
                 { name: "Ликвидность", value: fin_current_ratio },
               ]}
             >
@@ -135,7 +134,7 @@ export default function FinancialTabContent({
             <BarChart
               data={[
                 { name: "CF опер.", value: fin_cashflow_oper },
-                { name: "CF/Debt%", value: fin_cf_op_to_debt * 100 },
+                { name: "CF/Debt%", value: cfDebtPercent },
               ]}
             >
               <CartesianGrid strokeDasharray="3 3" />

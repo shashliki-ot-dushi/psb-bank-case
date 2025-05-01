@@ -15,8 +15,8 @@ interface ContractsData {
   cnt_44fz?: number
   cnt_223fz?: number
   cnt_94fz?: number
-  sumAmount?: number
-  topCustomerShare?: number
+  sum_price_total?: number
+  top_customer_share?: number
 }
 
 export default function ContractsTabContent({
@@ -29,8 +29,8 @@ export default function ContractsTabContent({
     cnt_44fz = 0,
     cnt_223fz = 0,
     cnt_94fz = 0,
-    sumAmount = 0,
-    topCustomerShare = 0,
+    sum_price_total = 0,
+    top_customer_share = 0,
   } = data
 
   return (
@@ -66,7 +66,7 @@ export default function ContractsTabContent({
           {new Intl.NumberFormat("ru-RU", {
             style: "currency",
             currency: "RUB",
-          }).format(sumAmount)}
+          }).format(sum_price_total)}
         </CardContent>
       </Card>
 
@@ -75,7 +75,7 @@ export default function ContractsTabContent({
           <CardTitle>Доля крупного заказчика</CardTitle>
         </CardHeader>
         <CardContent className="h-80 flex items-center justify-center text-2xl">
-          {(topCustomerShare * 100).toFixed(1)}%
+          {(top_customer_share * 100).toFixed(1)}%
         </CardContent>
       </Card>
     </div>

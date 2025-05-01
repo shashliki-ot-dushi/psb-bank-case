@@ -31,8 +31,6 @@ export default function Home() {
         { method: "GET" }
       )
 
-      console.log(res)
-
       if (res.status === 404) {
         setErrorMessage("Компания с указанным ИНН не найдена.")
         setIsSearching(false)

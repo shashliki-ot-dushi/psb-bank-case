@@ -9,7 +9,6 @@ import { getCompanyData, CompanyData } from "./getCompanyData"
 import CreditDecisionCard from "./components/CreditDecisionCard"
 import FeatureImportanceChart from "./components/FeatureImportanceChart"
 import FeatureImpactChart from "./components/FeatureImpactChart"
-import GlobalImportanceChart from "./components/GlobalImportanceChart"
 import FinancialTabContent from "./components/FinancialTabContent"
 import ArbitrationTabContent from "./components/ArbitrationTabContent"
 import EnforcementTabContent from "./components/EnforcementTabContent"
@@ -69,6 +68,16 @@ export default function CompanyDashboardClient({ companyId }: { companyId: strin
     taxId,
   } = company
 
+  // Преобразуем в массив [{name, value}, …], умножаем на 100 для процентов, сортируем и берем топ‑10
+
+  const rawInfluencers: Record<string, number> = company.key_influencers[0] || {}
+
+  // 3. impactData — топ‑10 с учётом знака (плюс/минус)
+  const impactData = Object.entries(rawInfluencers)
+    .map(([name, val]) => ({ name, value: val * 100 }))
+    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
+    .slice(0, 10)
+
   return (
     <main className="min-h-screen p-4 md:p-8">
       <Link href="/" className="fixed bottom-8 right-8 z-10">
@@ -78,25 +87,18 @@ export default function CompanyDashboardClient({ companyId }: { companyId: strin
         </Button>
       </Link>
 
-      <section className="mb-8 p-4 bg-gray-100 rounded">
-        <h2 className="text-xl font-medium mb-2">DEBUG: Financial Data</h2>
-        <pre className="teыxt-sm overflow-auto">
-          {JSON.stringify(company, null, 2)}
-        </pre>
-      </section>
 
       <div className="max-w-7xl mx-auto">
         <header className="mb-8">
           <h1 className="text-3xl font-semibold">{name}</h1>
-          <p className="text-muted-foreground">ИНН: {taxId}</p>
+          <p className="text-muted-foreground">ИНН: {company.statsAll.general.inn}</p>
         </header>
 
         <CreditDecisionCard approved={company.verdict} creditScore={100 - Math.round(company.score * 100)} />
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <FeatureImportanceChart data={featureImportance} />
-          <FeatureImpactChart data={featureImpact} />
-          <GlobalImportanceChart data={globalImportance} />
+          <FeatureImportanceChart data={company.key_influencers[0]} />
+          <FeatureImpactChart data={impactData} />
         </section>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

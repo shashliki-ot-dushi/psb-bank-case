@@ -55,6 +55,8 @@ export default function EnforcementTabContent({
                   { name: "Кредиты", value: enf_credit_cnt },
                   { name: "Прочие", value: otherCases },
                 ]}
+                dataKey="value"      
+                nameKey="name"
                 cx="50%"
                 cy="50%"
                 outerRadius={80}

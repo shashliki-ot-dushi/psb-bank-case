@@ -8,6 +8,8 @@ interface Props {
 }
 
 export default function FeatureImpactChart({ data }: Props) {
+  const chartData = Array.isArray(data) ? data : []
+
   return (
     <Card>
       <CardHeader>
@@ -16,7 +18,7 @@ export default function FeatureImpactChart({ data }: Props) {
       </CardHeader>
       <CardContent className="h-80">
         <ResponsiveContainer>
-          <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
+          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" domain={[-100, 100]} />
             <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12 }} />

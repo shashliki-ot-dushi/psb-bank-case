@@ -78,19 +78,24 @@ export default function ArbitrationTabContent({
         <CardContent className="h-80">
           <ResponsiveContainer>
             <PieChart>
-              <Pie
-                data={[
-                  { name: "Истец", value: arb_open_cases_cnt - arb_cases_defendant },
-                  { name: "Ответчик", value: arb_cases_defendant },
-                ]}
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                label
-              >
-                <Cell fill="#4ade80" />
-                <Cell fill="#f87171" />
-              </Pie>
+            <Pie
+              data={[
+                {
+                  name: "Истец",
+                  value: arb_open_cases_cnt - arb_cases_defendant,
+                },
+                { name: "Ответчик", value: arb_cases_defendant },
+              ]}
+              dataKey="value"       // <-- Добавлено: указывает, какое поле брать за значение
+              nameKey="name"         // <-- Рекомендуется также задать ключ имени
+              cx="50%"
+              cy="50%"
+              outerRadius={80}
+              label
+            >
+              <Cell fill="#3B82F6" />
+              <Cell fill="#F59E0B" />
+            </Pie>
               <Tooltip formatter={value => 
                 typeof value === "number" 
                   ? new Intl.NumberFormat("ru-RU").format(value) 
