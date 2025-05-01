@@ -3,8 +3,17 @@ from os import environ
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import requests
+import logging
 
 app = FastAPI()
+
+# --- Настройка логирования ---
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler()]
+)
+logger = logging.getLogger(__name__)
 
 # Конфигурация Yandex LLM (лучше вынести в переменные окружения)
 URL = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
@@ -17,57 +26,103 @@ FOLDER_ID = environ.get("YANDEX_CLOUD_FOLDER_ID")
 if not FOLDER_ID:
     raise KeyError("Environment variable YANDEX_CLOUD_FOLDER_ID not specified")
 
-# Модели запроса/ответа
-class AnalysisRequest(BaseModel):
-    text: str
+class NewsRequest(BaseModel):
+    query: str = "роснефть"
+    language: str = "ru"
+    page_size: int = 2
 
-class AnalysisResponse(BaseModel):
-    analysis_result: str
-    status: str = "success"
+class NewsAnalysis(BaseModel):
+    title: str
+    description: str
+    url: str
+    analysis: str
 
-def send_to_yandex_gpt(user_text: str) -> str:
-    """Отправляет запрос к Yandex LLM API"""
+class NewsResponse(BaseModel):
+    results: list[NewsAnalysis]
+
+# --- Инициализация клиентов ---
+newsapi = NewsApiClient(api_key=NEWSAPI_KEY)
+
+def analyze_with_yagpt(text: str) -> str:
+    """Анализ текста через Yandex GPT"""
     prompt = {
         "modelUri": f"gpt://{FOLDER_ID}/yandexgpt",
         "completionOptions": {
             "stream": False,
             "temperature": 0.6,
-            "maxTokens": "2000"
+            "maxTokens": "1000"
         },
         "messages": [
             {
                 "role": "system",
-                "text": "Ты - кредитный ассистент. Анализируй предоставленные новости о предприятии и объясни специалисту по кредитам ключевые моменты. Будь кратким и конкретным."
+                "text": "Ты - финансовый аналитик. Выдели ключевые факты и оцени влияние события на компанию."
             },
             {
                 "role": "user",
-                "text": user_text
+                "text": text[:2000]  # Ограничение длины текста
             }
         ]
     }
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Api-Key {API_KEY}"
+        "Authorization": f"Api-Key {YANDEX_API_KEY}"
     }
 
     try:
-        response = requests.post(URL, headers=headers, json=prompt)
+        logger.info("Отправка запроса в Yandex GPT...")
+        response = requests.post(YANDEX_URL, headers=headers, json=prompt, timeout=10)
         response.raise_for_status()
         return response.json()['result']['alternatives'][0]['message']['text']
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
+        logger.error(f"Ошибка Yandex GPT: {str(e)}")
+        return f"Ошибка анализа: {str(e)}"
 
-@app.post("/analyze", response_model=AnalysisResponse)
-async def analyze_text(request: AnalysisRequest):
-    """Основной эндпоинт для анализа текста"""
-    if not request.text.strip():
-        raise HTTPException(status_code=400, detail="Текст не может быть пустым")
-    
+@app.post("/news-analysis", response_model=NewsResponse)
+async def get_news_analysis(request: NewsRequest):
+    """Получение и анализ новостей"""
     try:
-        analysis_result = send_to_yandex_gpt(request.text)
-        return AnalysisResponse(analysis_result=analysis_result)
-    except HTTPException as he:
-        raise he
+        logger.info(f"Поиск новостей по запросу: '{request.query}'")
+        
+        # Получение новостей
+        news_data = newsapi.get_everything(
+            q=request.query,
+            language=request.language,
+            sort_by="publishedAt",
+            page_size=request.page_size
+        )
+
+        if not news_data.get("articles"):
+            logger.warning("Новости не найдены!")
+            return NewsResponse(results=[])
+
+        results = []
+        for article in news_data["articles"]:
+            try:
+                # Формирование текста для анализа
+                title = article.get("title", "Без заголовка")
+                description = article.get("description", "Без описания")
+                text_to_analyze = f"{title}\n\n{description}"
+                
+                logger.info(f"Анализ статьи: {title[:50]}...")
+                
+                # Анализ текста
+                analysis = analyze_with_yagpt(text_to_analyze)
+                
+                # Формирование результата
+                results.append(NewsAnalysis(
+                    title=title,
+                    description=description,
+                    url=article.get("url", ""),
+                    analysis=analysis
+                ))
+                
+            except Exception as e:
+                logger.error(f"Ошибка обработки статьи: {str(e)}")
+                continue
+
+        return NewsResponse(results=results)
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.critical(f"Критическая ошибка: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
