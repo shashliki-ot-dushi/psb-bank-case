@@ -1,5 +1,5 @@
 # Use an official Python base image
-FROM python:3.13-slim
+FROM python:3.13
 
 # Set working directory
 WORKDIR /app
@@ -17,4 +17,6 @@ RUN uv sync
 EXPOSE 8000
 
 # Command to run FastAPI app
-ENTRYPOINT ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+WORKDIR /app/src
+
+ENTRYPOINT ["uv", "run", "--", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
