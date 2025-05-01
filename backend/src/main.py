@@ -1,6 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import root, stats
+from database import test_db
+
+
+# Testing infrastructure
+test_db()
 
 app = FastAPI(
     title="Financial Analysis API",
