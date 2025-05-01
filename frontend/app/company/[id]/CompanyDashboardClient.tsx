@@ -81,7 +81,7 @@ export default function CompanyDashboardClient({ companyId }: { companyId: strin
       <section className="mb-8 p-4 bg-gray-100 rounded">
         <h2 className="text-xl font-medium mb-2">DEBUG: Financial Data</h2>
         <pre className="teыxt-sm overflow-auto">
-          {JSON.stringify(company.creditScore, null, 2)}
+          {JSON.stringify(company, null, 2)}
         </pre>
       </section>
 
