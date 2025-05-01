@@ -1,27 +1,23 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
+import "./globals.css"  
+import React from "react"
 
-const inter = Inter({ subsets: ["latin"] })
+export default async function RootLayout(
+  {
+    children,
+    params,
+  }: Readonly<{
+    children: React.ReactNode
+    // Next.js 15 now passes params as a Promise
+    params: Promise<{ locale: string }>
+  }>
+) {
+  // 1. await the params promise
+  const { locale } = await params
 
-export const metadata: Metadata = {
-  title: "Intelligent Credit-Scoring Assistant",
-  description: "Credit-Scoring Assistant for Corporate Borrowers",
-  icons: {
-    icon: "/logo.jpg",
-  },
-
-}
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+  // 2. now you can use locale freely
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang={locale}>
+      <body>{children}</body>
     </html>
   )
 }
