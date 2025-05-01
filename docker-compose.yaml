@@ -2,6 +2,7 @@ services:
   backend:
     build: ./backend
     environment:
+      - DATABASE_URL
       - REDIS_URL=redis://redis:6379/0
       - YANDEX_CLOUD_API_KEY
       - YANDEX_CLOUD_FOLDER_ID

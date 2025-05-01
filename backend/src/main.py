@@ -1,16 +1,20 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import root, stats
+from routers import root, stats, raw, load_raw_tables
 from database import test_db
 
 
 # Testing infrastructure
 test_db()
+load_raw_tables()
 
 app = FastAPI(
-    title="Financial Analysis API",
-    description="Сервис для анализа финансовой устойчивости компаний по ИНН",
-    version="1.0.0"
+    title="Company Analysis & LLM Chat API",
+    version="1.0.0",
+    openapi_tags=[
+        {"name": "Financial Analysis", "description": "Анализ вероятности дефолта и влияющих факторов"},
+        {"name": "Company statistics", "description": "Статистика по категориям для заданного ИНН"},
+    ],
 )
 
 # Configure CORS
@@ -24,3 +28,4 @@ app.add_middleware(
 
 app.include_router(root)
 app.include_router(stats)
+app.include_router(raw)

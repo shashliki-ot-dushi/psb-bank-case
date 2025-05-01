@@ -1,25 +1,33 @@
 from os import environ
+from collections import defaultdict
 from typing import Dict, Any
-import requests
+
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, APIRouter, Query, HTTPException
+
+import requests
+from fastapi import FastAPI, APIRouter, Query, HTTPException, Depends
 from fastapi.responses import PlainTextResponse
-from catboost import CatBoostClassifier
+from sqlalchemy.orm import Session
+
 import shap
+from catboost import CatBoostClassifier
 
 from schemas import AnalyzeResponse, Verdict, ChatResponse
 from company import CompanyStatsFromLocal, CompanyNotFoundError
+from database import get_db
 from llm_request import query_yandex
 
-app = FastAPI(
-    title="Company Analysis & LLM Chat API",
-    version="1.0.0",
-    openapi_tags=[
-        {"name": "Financial Analysis", "description": "Анализ вероятности дефолта и влияющих факторов"},
-        {"name": "Company statistics", "description": "Статистика по категориям для заданного ИНН"},
-    ],
-)
+# Настройки для преобразованных таблиц для BERT
+RAW_TABLE_FILES: dict[str, str] = {
+    "contracts":    "../data/contracts.csv",
+    "egrul":        "../data/egrul.csv",
+    "enforcements": "../data/enforcements.csv",
+    "finances":     "../data/finances.csv",
+    "kad_arbitr":   "../data/kad_arbitr.csv",
+}
+
+raw_tables = {}
 
 # Конфигурация YandexGPT
 BASE_URL = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
@@ -43,6 +51,30 @@ explainer = shap.TreeExplainer(credit_model)
 # Роутеры
 root = APIRouter(prefix="/v1", tags=["Financial Analysis"])
 stats = APIRouter(prefix="/v1/stats", tags=["Company statistics"])
+raw = APIRouter(prefix="/v1/raw", tags=["Ra data"])
+
+
+def load_raw_tables() -> None:
+    """
+    Построчно подгружает большие CSV и сохраняет только колонку data_text
+    (привязывая её к ИНН) в оперативную память.
+    """
+    for name, path in RAW_TABLE_FILES.items():
+        df = pd.read_csv(path)
+        raw_tables[name] = df["data_text"]
+
+
+def _get_data_text(table: str, inn: str) -> PlainTextResponse:
+    tbl = raw_tables.get(table)
+    return PlainTextResponse(tbl["
+    if tbl is None:
+        raise HTTPException(status_code=404, detail=f"Неизвестная таблица “{table}”")
+    rows = tbl.get(inn)
+    if not rows:
+        raise HTTPException(status_code=404,
+                            detail=f"ИНН {inn} не найден в таблице “{table}”")
+    # если строк несколько — склеиваем через перевод строки
+    return PlainTextResponse("\n".join(rows))
 
 
 def expect_not_found(func, inn: str):
@@ -58,6 +90,7 @@ def expect_not_found(func, inn: str):
     summary="Анализ компании"
 )
 async def analyze_company(
+    db: Session = Depends(get_db),
     inn: str = Query(..., description="ИНН компании")
 ):
     # Получаем строку с данными или 404
@@ -131,6 +164,7 @@ async def financial(
     inn: str = Query(..., description="ИНН компании")
 ):
     return expect_not_found(stats_source.get_financial_stats, inn)
+
 
 # Эндпоинты статистики по категориям
 @stats.get("/financial", summary="Финансовые метрики")
@@ -210,6 +244,10 @@ async def all_stats(
     return expect_not_found(stats_source.get_all_stats, inn)
 
 
-# Регистрируем роутеры в приложении
-app.include_router(root)
-app.include_router(stats)
+@raw.get("/{table}", summary="data_text по таблице", response_class=PlainTextResponse)
+async def raw_generic(table: str, inn: str = Query(..., description="ИНН")):
+    """
+    Универсальный эндпоинт: /v1/raw/{table}?inn=...
+    """
+    return _get_data_text(table.lower(), inn)
+
